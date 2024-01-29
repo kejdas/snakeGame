@@ -1,144 +1,120 @@
+from tkinter import *
 import random
 
-MIN_LINES = 1
-MAX_LINES = 3
-MIN_BET = 1
-MAX_BET = 100
+# Constants defining the game properties
+GAME_WIDTH = 800
+GAME_HEIGHT = 800
+SPEED = 50
+SPACE_SIZE = 50
+BODY_PARTS = 2
+SNAKE_COLOR = "green"
+FOOD_COLOR = "red"
+BACKGROUND_COLOR = "black"
 
-ROWS = 3
-COLS = 3
+# Snake class to manage the snake's properties and behavior
+class Snake:
+    def __init__(self):
+        self.body_size = BODY_PARTS
+        self.coordinates = []
+        self.squares = []
 
-symbol_count = {
-    "A": 2,
-    "B": 4,
-    "C": 6,
-    "D": 8
-}
+        # Initialize snake coordinates
+        for i in range(0, BODY_PARTS):
+            self.coordinates.append([0, 700])
 
-symbol_value = {
-    "A": 5,
-    "B": 4,
-    "C": 3,
-    "D": 2
-}
+        # Create snake squares on the canvas
+        for x, y in self.coordinates:
+            square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR, tags="snake")
+            self.squares.append(square)
 
-def chech_winnings(columns, lines, bet, values):
-    winnings = 0
-    winning_lines = []
-    for line in range(lines):
-        symbol = columns[0][line]
-        for column in columns:
-            symbol_to_check = column[line]
-            if symbol != symbol_to_check:
-                break
-        else:
-            winnings += values[symbol] * bet
-            winning_lines.append(line + 1)
+# Food class to manage the food's properties and placement
+class Food:
+    def __init__(self):
+        x = random.randint(0, (GAME_WIDTH / SPACE_SIZE) - 1) * SPACE_SIZE
+        y = random.randint(0, (GAME_HEIGHT / SPACE_SIZE) - 1) * SPACE_SIZE
 
-    return winnings, winning_lines
+        self.coordinates = [x, y]
 
-def get_spin(rows, cols, symbols):
-    all_symbols = []
-    for symbol, symbol_count in symbols.items():
-        for _ in range(symbol_count):
-            all_symbols.append(symbol)
+        # Create food square on the canvas
+        canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=FOOD_COLOR, tags="food")
 
-    columns = []
-    for _ in range(cols):
-        column = []
-        current_symobols = all_symbols[:]
-        for _ in range(rows):
-            value = random.choice(current_symobols)
-            current_symobols.remove(value)
-            column.append(value)
+# Function to handle the next turn of the snake
+def next_turn(snake, food):
+    x, y = snake.coordinates[0]
 
-        columns.append(column)
+    # Update coordinates based on the current direction
+    if direction == "up":
+        y -= SPACE_SIZE
+    elif direction == "down":
+        y += SPACE_SIZE
+    elif direction == "left":
+        x -= SPACE_SIZE
+    elif direction == "right":
+        x += SPACE_SIZE
 
-    return columns
+    # Insert the new head coordinates at the beginning
+    snake.coordinates.insert(0, (x, y))
 
-def print_slot_machine(columns):
-    for row in range(len(columns[0])):
-        for i, column in enumerate(columns):
-            if i != len(columns) - 1:
-                print(column[row], end=" | ")
-            else:
-                print(column[row], end="")
+    # Create a new snake square at the new head position
+    square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR, tags="snake")
+    snake.squares.insert(0, square)
 
-        print()
+    # Delete the tail of the snake
+    del snake.coordinates[-1]
+    canvas.delete(snake.squares[-1])
 
-def deposit():
-    while True:
-        amount = input("How much $ would u like to depsit? ")
-        if amount.isdigit():
-            amount = int(amount)
-            if amount > 0:
-                break
-            else:
-                print("Ammount must be grater than 0!")
-        else:
-            print("You can only pass positive numbers!")
-    return amount
+    # Call the next turn after a delay
+    window.after(SPEED, next_turn, snake, food)
 
-def get_number_of_lines():
-    while True:
-        lines = input(f"How much lines would u like to display? ({MIN_LINES} - {MAX_LINES}): ")
-        if lines.isdigit():
-            lines = int(lines)
-            if MIN_LINES <= lines <= MAX_LINES:
-                break
-            else:
-                print(f"Lines must be in range ({MIN_LINES} - {MAX_LINES}): ")
-        else:
-            print("Please enter number")
-    return lines
+# Placeholder function for changing the direction of the snake
+def change_direction():
+    pass
 
-def get_bet():
-    while True:
-        bet = input(f"How much money would u like to bet on each line? ({MIN_BET}$ - {MAX_BET}$): ")
-        if bet.isdigit():
-            bet = int(bet)
-            if MIN_BET <= bet <= MAX_BET:
-                break
-            else:
-                print(f"Lines must be in range ({MIN_BET}$ - {MAX_BET}$): ")
-        else:
-            print("Please enter number")
-    return bet
+# Placeholder function for checking collisions
+def check_collisions():
+    pass
 
-def spin(balance):
-    lines = get_number_of_lines()
-    while True:
-        bet = get_bet()
-        total_bet = bet * lines
+# Placeholder function for handling game over
+def game_over():
+    pass
 
-        if total_bet > balance:
-            print(f"You can not afford for that move! Your current balance is: {balance}$")
-        else:
-            break
+# Set up the Tkinter window
+window = Tk()
+window.title("Kejdi's Snake GAME")
+window.resizable(False, False)
 
-    print(f"You are betting {bet}$ on {lines} lines. Total bet is: {total_bet}$")
+# Initialize game-related variables
+score = 0
+direction = "down"
 
-    slots = get_spin(ROWS, COLS, symbol_count)
-    print_slot_machine(slots)
-    winning, winning_lines = chech_winnings(slots, lines, bet, symbol_value)
-    print(f"You won {winning}$!")
-    print(f"You won on lines: ", *winning_lines)
+# Create a label to display the score
+label = Label(window, text="Score: {}".format(score), font=("consolas", 40))
+label.pack()
 
-    return  winning - total_bet
+# Create a canvas for the game
+canvas = Canvas(window, bg=BACKGROUND_COLOR, width=GAME_WIDTH, height=GAME_HEIGHT)
+canvas.pack()
 
-def main():
-    balance = deposit()
-    while True:
-        print(f"Your current balance is {balance}$")
-        if balance == 0:
-            print("You lost everything, good job F00l!")
-            break
-        answer = input("Press enter to play (q to quit)")
-        if answer == "q":
-            break
-        balance += spin(balance)
+# Update the window to get accurate width and height
+window.update()
 
-    print(f"You left with {balance}")
+# Set window position on the screen
+window_width = window.winfo_width()
+window_height = window.winfo_height()
+screen_width = window.winfo_screenwidth()
+screen_height = window.winfo_screenheight()
 
-if __name__ == '__main__':
-    main()
+x = int((screen_width - window_width) / 2)
+y = int((screen_height - window_height) / 2)
+
+window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Create instances of Snake and Food classes
+snake = Snake()
+food = Food()
+
+# Start the game by calling the next_turn function
+next_turn(snake, food)
+
+# Start the Tkinter main loop
+window.mainloop()
